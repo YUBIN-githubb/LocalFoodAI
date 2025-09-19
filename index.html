@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>순천 식탁</title>
+    <title>순천 밥상</title>
+    <link rel="icon" type="image/png" href="image_favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&family=IBM+Plex+Sans+KR&family=Jua&family=Nanum+Pen+Script&display=swap');
         body {
             font-family: 'Jua', sans-serif;
-            background-image: url('image_ai.png');
-            background-size: contain;
+            background-image: url('/image_ai.png');
+            background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
@@ -66,8 +67,11 @@
         
         <!-- Header -->
         <div class="header text-center pb-4 border-b border-gray-200 mb-6">
-            <h1 class="text-3xl font-bold text-[#3B482A]">순천 로컬푸드 레시피 AI</h1>
-            <p class="text-gray-500 mt-2">순천의 로컬푸드로 한 끼 식사를 뚝딱 만들어보세요!</p>
+            <div class="flex items-center justify-center gap-3">
+                <img src="image_favicon.png" alt="순천 로컬푸드 아이콘" class="w-10 h-10">
+                <h1 class="text-3xl font-bold text-[#3B482A]">순천 밥상</h1>
+            </div>
+            <p class="text-gray-500 mt-2">AI 순천 로컬푸드 레시피로 한 끼 식사를 뚝딱 만들어보세요!</p>
         </div>
 
         <!-- Chat Box -->
@@ -111,7 +115,7 @@
         let data = {};
         
         // 초기 환영 메시지
-        addMessage('안녕하세요! 순천 로컬푸드 레시피 AI 챗봇입니다. 원하시는 기능을 선택해주세요.\n제철 레시피는 현재 순천의 제철 재료들로 만들 수 있는 레시피를 알려드려요.\n맞춤형 레시피는 현재 로컬푸드에서 판매되고 있는 상품과 사용자가 가진 재료를 이용한 레시피를 추천해드려요. 여러분의 냉장고 속 재료들을 입력하고 로컬푸드의 카테고리를 골라주세요.', 'bot');
+        addMessage('안녕하세요! 👋 순천 로컬푸드 레시피 AI 챗봇, 순천밥상입니다.\n원하시는 기능을 선택해 보세요.\n\n🥬 제철 레시피\n→ 현재 순천의 제철 식재료로 만들 수 있는 간단하고 맛있는 레시피 추천\n\n🍳 맞춤형 레시피\n→ 내 냉장고 속 재료 + 로컬푸드 카테고리를 선택하면 함께 활용할 수 있는 로컬푸드와 레시피를 추천\n\n여러분의 냉장고 속 재료를 입력하고, 원하는 로컬푸드 카테고리를 골라보세요!\n새로운 요리를 손쉽게 만나볼 수 있어요. 🍽️', 'bot');
 
         // JSON 데이터 파일 로드
         async function loadData() {
@@ -135,11 +139,35 @@
             }
         }
         
+        // 마크다운을 HTML로 변환하는 간단한 함수
+        function parseMarkdown(text) {
+            return text
+                // 헤딩 처리 (# ## ###)
+                .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-gray-800 mt-5 mb-3">$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-[#3B482A] mt-6 mb-4">$1</h1>')
+                // 볼드 처리 (**text**)
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
+                // 리스트 처리 (- item)
+                .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1 list-disc">$1</li>')
+                // 숫자 리스트 처리 (1. item)
+                .replace(/(^\d+\. .*$)/gim, '<ol class="list-decimal ml-4">$1</ol>')
+                .replace(/^\d+\. (.*$)/gim, '<li class="mb-1">$1</li>')
+                // 줄바꿈 처리
+                .replace(/\n/g, '<br>');
+        }
+        
         // 챗봇 또는 사용자 메시지 추가
         function addMessage(text, sender) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message-bubble', 'p-3', 'rounded-xl', 'text-gray-800');
-            messageElement.innerHTML = text.replace(/\n/g, '<br>');
+            
+            // 봇 메시지인 경우 마크다운 파싱 적용
+            if (sender === 'bot') {
+                messageElement.innerHTML = parseMarkdown(text);
+            } else {
+                messageElement.innerHTML = text.replace(/\n/g, '<br>');
+            }
             
             if (sender === 'user') {
                 messageElement.classList.add('bg-[#8c7657]', 'text-white', 'self-end', 'rounded-br-none');
@@ -197,8 +225,53 @@
             addMessage(`'${productName}' 레시피를 보여줘`, "user");
             showLoading(true);
             
-            const prompt = `순천 로컬푸드 제철 상품인 '${productName}'을 활용한 요리 레시피를 추천해주세요.
-            레시피는 간단하고 따라하기 쉽게 구성해 주세요. 재료 목록과 요리 방법을 단계별로 명시해주세요.`;
+            const prompt = `당신은 순천 로컬푸드와 제철 식재료에 전문성을 가진 셰프 & 푸드 컨설턴트입니다.
+                            '${productName}'을(를) 활용한 간단하고 따라 하기 쉬운 가정식 요리 레시피를 추천해 주세요.
+
+                            출력 형식:
+
+                            레시피 이름 - 대중적이면서 직관적인 이름
+
+                            간단한 요리 설명 - 해당 요리에 대한 간단한 설명
+
+                            조리 시간 - 대략적인 준비 + 조리 시간
+
+                            난이도 - 쉬움 / 보통 / 어려움
+
+                            재료 목록 - 인분 기준, 계량 단위 포함
+
+                            조리 단계 - 단계별 번호 매기기, 구체적이고 간단한 설명
+
+                            요리 팁 & 대체 재료 - 계절 식재료를 살리거나 응용할 수 있는 팁
+
+                            few-shot 예시
+                            레시피 이름: 순천 애호박 달걀볶음
+
+                            조리 시간: 15분
+                            
+                            난이도: 쉬움
+                            
+                            재료: 애호박 1개, 달걀 2개, 식용유 1큰술, 소금 약간, 후추 약간
+
+                            조리 단계(번호 매기기, 단계별로 명확히 작성):
+
+                            - 애호박을 반달 모양으로 썬다.
+
+                            - 달걀을 풀어 소금 약간을 넣고 섞는다.
+
+                            - 팬에 식용유를 두르고 애호박을 중불에서 2~3분간 볶는다.
+
+                            - 애호박이 투명해지면 달걀물을 부어 빠르게 저어 익힌다.
+
+                            - 후추로 간하고 불을 끈다.
+
+                            요리 팁 & 대체 재료:
+
+                            기호에 따라 참기름 한 방울을 넣으면 고소한 풍미가 살아나요.
+
+                            달걀 대신 두부를 넣어도 담백하고 맛있습니다.
+
+                            답변은 마크다운 형식으로 깔끔하게 작성해 주세요.`;
 
             await fetchRecipeFromAI(prompt);
         }
@@ -238,15 +311,80 @@
             console.log(allProductsList)
             
             // AI에게 보낼 프롬프트 구성
-            const prompt = `사용자가 가진 재료는 '${userIngredients}' 입니다.
-            다음은 순천 로컬푸드 ${categoryName}의 모든 상품 목록입니다:
-            ${allProductsList.join(', ')}
-            
-            위 목록에서 사용자가 가진 재료와 가장 궁합이 잘 어울리는 상품 1가지를 선택해주세요.
-            
-            선택한 이유와 그 상품명을 명확하게 알려주세요.
-            그 후, 선택한 로컬푸드 상품과 사용자의 재료를 모두 활용하여 만들 수 있는 요리 레시피를 추천해주세요. 레시피는 간단하고 따라하기 쉽게 구성해 주세요.
-            또한 레시피 설명이 끝난 이후에 해당 상품명을 제시하고 구매를 유도하는 멘트를 덧붙여주세요.
+            const prompt = `당신은 순천 로컬푸드와 제철 식재료에 전문성을 가진 셰프 & 푸드 컨설턴트입니다.
+                            사용자가 가진 재료: ${userIngredients}
+
+                            다음은 순천 로컬푸드 ${categoryName}의 모든 상품 목록입니다:
+                            ${allProductsList.join(', ')}
+
+                            요청 사항
+
+                            위 목록에서 사용자가 가진 재료와 궁합이 가장 좋은 상품 1가지를 선택하고, 그 이유를 설명해주세요.
+
+                            선택한 상품명과 이유를 명확하게 출력해주세요.
+
+                            그 상품과 사용자의 재료를 활용해 간단하고 따라 하기 쉬운 가정식 레시피를 추천해주세요.
+
+                            레시피는 다음 형식으로 작성해주세요:
+
+                            출력 형식(답변은 마크다운 형식으로 깔끔하게 작성해 주세요.):
+
+                            레시피 이름 - 대중적이면서 직관적인 이름
+
+                            추천 순천 로컬푸드 - 선택한 상품명
+
+                            추천 이유 - 추천 이유
+
+                            간단한 요리 설명 - 해당 요리에 대한 간단한 설명
+
+                            조리 시간 - 대략적인 준비 + 조리 시간
+
+                            난이도 - 쉬움 / 보통 / 어려움
+
+                            재료 목록 - 인분 기준, 계량 단위 포함
+
+                            조리 단계 - 단계별 번호 매기기, 구체적이고 간단한 설명
+
+                            요리 팁 & 대체 재료 - 계절 식재료를 살리거나 응용할 수 있는 팁
+
+                            마지막에 상품명을 다시 한 번 강조하고, 구매를 유도하는 짧고 설득력 있는 문장을 덧붙이세요.
+
+                            few-shot 예시
+
+                            추천 순천 로컬푸드: 순천 애호박
+                            추천 이유: 사용자가 가진 달걀, 양파와 함께 볶으면 단백질과 채소가 균형 잡힌 간단한 반찬을 만들 수 있어요!
+
+                            few-shot 예시
+                            레시피 이름: 순천 애호박 달걀볶음
+
+                            조리 시간: 15분
+                            
+                            난이도: 쉬움
+                            
+                            재료: 애호박 1개, 달걀 2개, 식용유 1큰술, 소금 약간, 후추 약간
+
+                            조리 단계(번호 매기기, 단계별로 명확히 작성):
+
+                            - 애호박을 반달 모양으로 썬다.
+
+                            - 달걀을 풀어 소금 약간을 넣고 섞는다.
+
+                            - 팬에 식용유를 두르고 애호박을 중불에서 2~3분간 볶는다.
+
+                            - 애호박이 투명해지면 달걀물을 부어 빠르게 저어 익힌다.
+
+                            - 후추로 간하고 불을 끈다.
+
+                            요리 팁 & 대체 재료:
+
+                            기호에 따라 참기름 한 방울을 넣으면 고소한 풍미가 살아나요.
+
+                            달걀 대신 두부를 넣어도 담백하고 맛있습니다.
+
+                            구매 유도 멘트:
+                            순천 애호박은 지금 순천 로컬푸드 직매장에서 만나보실 수 있어요! 오늘 바로 장바구니에 담아 신선한 맛을 즐겨보세요.
+
+                            답변은 마크다운 형식으로 깔끔하게 작성해 주세요.
             `;
 
             await fetchRecipeFromAI(prompt);
@@ -296,7 +434,7 @@
                 }
 
                 if (recipeText) {
-                    addMessage('레시피에 이용된 재료는 순천 로컬푸드 마켓에서 판매하고 있어요! 구매해보시는건 어떨까요?', 'bot');
+                    addMessage('레시피에 이용된 재료는 순천 로컬푸드 직매장에서 만나보실 수 있어요! 구매해 보시는 건 어떨까요?<br><a href="https://sclocal.kr/" target="_blank" class="text-blue-500 underline">순천 로컬푸드 바로가기</a>', 'bot');
                 }
 
 
